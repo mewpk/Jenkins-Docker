@@ -15,5 +15,10 @@ docker run -p 8080:8080 -p 50000:50000 --name=jenkins-master --volumes-from=jenk
 echo "Listing all containers..."
 docker ps -a
 
+echo "Waiting for Jenkins to generate initial admin password..."
+while ! docker exec jenkins-master test -f /var/jenkins_home/secrets/initialAdminPassword; do
+    sleep 2
+done
+
 echo "Fetching Jenkins initial admin password..."
 docker exec jenkins-master cat /var/jenkins_home/secrets/initialAdminPassword
