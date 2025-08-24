@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:latest
+FROM jenkins/jenkins:lts
 USER root
 RUN mkdir /var/log/jenkins
 RUN mkdir /var/cache/jenkins
