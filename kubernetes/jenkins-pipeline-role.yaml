@@ -13,4 +13,3 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]
     verbs: ["get", "list", "create", "update", "delete", "patch"]
-

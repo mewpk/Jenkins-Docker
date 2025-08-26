@@ -41,7 +41,7 @@ else
 fi
 
 # ========================================
-# Apply RBAC manifests
+# Apply RBAC manifests (Role and RoleBinding)
 # ========================================
 log "----------------------------------------"
 log "Applying RBAC roles from the following files: ${ROLE_FILES[*]}"
