@@ -5,7 +5,7 @@ set -euo pipefail
 
 NAMESPACE="${1:-jenkins}"          # Pass namespace as first arg (default: jenkins)
 SA_NAME="${SA_NAME:-jenkins}"      # Override via env if needed
-ROLE_FILES=(jenkins-pipeline-role.yaml jenkins-pipeline-rolebinding.yaml)
+ROLE_FILES=(jenkins-pipeline-role.yaml jenkins-pipeline-rolebinding.yaml jenkins-pipeline-cluster-role-binding.yaml)  # Add cluster role binding file
 KUBECTL="${KUBECTL:-kubectl}"
 TOKEN_OUT="${TOKEN_OUT:-${SA_NAME}.token}"
 CERT_OUT="${CERT_OUT:-k8s-server.crt}"  # Output file for Kubernetes server certificate
@@ -41,7 +41,7 @@ else
 fi
 
 # ========================================
-# Apply RBAC manifests (Role and RoleBinding)
+# Apply RBAC manifests (Role, RoleBinding, ClusterRoleBinding)
 # ========================================
 log "----------------------------------------"
 log "Applying RBAC roles from the following files: ${ROLE_FILES[*]}"
