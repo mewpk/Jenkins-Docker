@@ -16,6 +16,10 @@ check_orbstack() {
   fi
 }
 
+# กำหนดค่าเริ่มต้นสำหรับ USER_FLAG และ GROUP_ADD
+USER_FLAG=""
+GROUP_ADD=""
+
 echo "[1/6] Build Jenkins image..."
 docker build -t "${IMG_NAME}" -f master/Dockerfile master
 
