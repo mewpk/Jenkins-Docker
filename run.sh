@@ -5,36 +5,52 @@ IMG_NAME=jenkins-master
 CONTAINER_NAME=jenkins-master
 VOLUME_NAME=jenkins_home
 
-echo "[1/5] Build Jenkins image..."
-docker build -t ${IMG_NAME} -f master/Dockerfile master
+# --- helper: ตรวจสอบว่า Orbstack กำลังทำงาน ---
+check_orbstack() {
+  if [ -d "$HOME/.orbstack" ]; then
+    echo "[INFO] Orbstack detected. Using .orbstack/docker.sock"
+    return 0  # ใช้ Orbstack
+  else
+    echo "[INFO] No Orbstack detected. Using default docker.sock"
+    return 1  # ไม่ใช้ Orbstack
+  fi
+}
 
-echo "[2/5] Create named volume (if not exists)..."
-docker volume inspect ${VOLUME_NAME} >/dev/null 2>&1 || docker volume create ${VOLUME_NAME}
+echo "[1/6] Build Jenkins image..."
+docker build -t "${IMG_NAME}" -f master/Dockerfile master
 
-echo "[3/5] Remove old container (if exists)..."
-docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
+echo "[2/6] Create named volume (if not exists)..."
+docker volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || docker volume create "${VOLUME_NAME}"
 
-# ดึง GID ของ docker.sock จากโฮสต์ เพื่อให้ jenkins user เข้าถึงได้
-DOCKER_SOCK_GID=$(stat -c '%g' /var/run/docker.sock)
+echo "[3/6] Remove old container (if exists)..."
+docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
-echo "[4/5] Start Jenkins container..."
+# --- ตรวจสอบ Orbstack และ mount docker.sock ตามสถานการณ์ ---
+DOCKER_SOCK_MOUNT=""
+if check_orbstack; then
+  DOCKER_SOCK_MOUNT="-v $HOME/.orbstack/run/docker.sock:/var/run/docker.sock"
+else
+  DOCKER_SOCK_MOUNT="-v /var/run/docker.sock:/var/run/docker.sock"
+fi
+
+echo "[4/6] Start Jenkins container..."
 docker run -d \
-  --name ${CONTAINER_NAME} \
+  --name "${CONTAINER_NAME}" \
   -p 8080:8080 -p 50000:50000 \
-  -v ${VOLUME_NAME}:/var/jenkins_home \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  --user 1000:1000 \
-  --group-add ${DOCKER_SOCK_GID} \
-  ${IMG_NAME}
+  -v "${VOLUME_NAME}:/var/jenkins_home" \
+  ${DOCKER_SOCK_MOUNT} \
+  ${USER_FLAG} \
+  ${GROUP_ADD} \
+  "${IMG_NAME}"
 
-echo "[5/5] Waiting for initial admin password..."
-until docker exec ${CONTAINER_NAME} test -f /var/jenkins_home/secrets/initialAdminPassword; do
+echo "[5/6] Waiting for initial admin password..."
+until docker exec "${CONTAINER_NAME}" test -f /var/jenkins_home/secrets/initialAdminPassword; do
   sleep 2
 done
 
 echo "------------------------------------------------------------"
 echo "Jenkins is up at:  http://localhost:8080"
 echo -n "InitialAdminPassword: "
-docker exec ${CONTAINER_NAME} cat /var/jenkins_home/secrets/initialAdminPassword
+docker exec "${CONTAINER_NAME}" cat /var/jenkins_home/secrets/initialAdminPassword
 echo
 echo "------------------------------------------------------------"
