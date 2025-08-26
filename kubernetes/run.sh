@@ -8,6 +8,7 @@ SA_NAME="${SA_NAME:-jenkins}"      # Override via env if needed
 ROLE_FILES=(jenkins-pipeline-role.yaml jenkins-pipeline-rolebinding.yaml)
 KUBECTL="${KUBECTL:-kubectl}"
 TOKEN_OUT="${TOKEN_OUT:-${SA_NAME}.token}"
+CERT_OUT="${CERT_OUT:-k8s-server.crt}"  # Output file for Kubernetes server certificate
 
 log() { printf '[%s] %s\n' "$(date +'%Y-%m-%dT%H:%M:%S')" "$*"; }
 need() { command -v "$1" >/dev/null || { echo "Missing command: $1" >&2; exit 1; }; }
@@ -97,4 +98,20 @@ if [[ $SHOW_TOKEN == 1 ]]; then
     printf '%s\n' "$TOKEN"
 else
     log "  Token preview:   ${TOKEN:0:8}... (set SHOW_TOKEN=1 or pass --show-token to print full token)"
+fi
+
+# ========================================
+# Fetch Kubernetes API server certificate from kubeconfig
+# ========================================
+log "----------------------------------------"
+log "Fetching Kubernetes API server certificate from kubeconfig..."
+
+CA_CERT="$($KUBECTL config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')"
+
+# Check if CA cert exists and write it to file
+if [[ -n "$CA_CERT" ]]; then
+    echo "$CA_CERT" > "$CERT_OUT"
+    log "Kubernetes server certificate written to: $CERT_OUT"
+else
+    log "Failed to retrieve Kubernetes server certificate."
 fi
