@@ -27,7 +27,7 @@ echo "[5/6] Waiting for initial admin password..."
 for i in {1..30}; do
   if docker exec "${CONTAINER_NAME}" test -f /var/jenkins_home/secrets/initialAdminPassword; then
     break
-  fi
+  fi  
   echo "Waiting for Jenkins to generate the initialAdminPassword (Attempt $i/30)..."
   sleep 5
 done
