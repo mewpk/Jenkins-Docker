@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMG_NAME=jenkins-master
-CONTAINER_NAME=jenkins-master
-VOLUME_NAME=jenkins_home
+IMG_NAME="jenkins-master"  # Ensure the image name is set correctly without extra spaces
+CONTAINER_NAME="jenkins-master"
+VOLUME_NAME="jenkins_home"
 
 # --- helper: ตรวจสอบว่า Orbstack กำลังทำงาน ---
 check_orbstack() {
@@ -19,6 +19,12 @@ check_orbstack() {
 # กำหนดค่าเริ่มต้นสำหรับ USER_FLAG และ GROUP_ADD
 USER_FLAG=""
 GROUP_ADD=""
+
+# --- ตรวจสอบการตั้งค่า USER_FLAG และ GROUP_ADD ---
+if check_orbstack; then
+  USER_FLAG="-u jenkins"
+  GROUP_ADD="--group-add docker"
+fi
 
 echo "[1/6] Build Jenkins image..."
 docker build -t "${IMG_NAME}" -f master/Dockerfile master
@@ -37,6 +43,7 @@ else
   DOCKER_SOCK_MOUNT="-v /var/run/docker.sock:/var/run/docker.sock"
 fi
 
+# --- Start Jenkins container ---
 echo "[4/6] Start Jenkins container..."
 docker run -d \
   --name "${CONTAINER_NAME}" \
@@ -48,8 +55,12 @@ docker run -d \
   "${IMG_NAME}"
 
 echo "[5/6] Waiting for initial admin password..."
-until docker exec "${CONTAINER_NAME}" test -f /var/jenkins_home/secrets/initialAdminPassword; do
-  sleep 2
+for i in {1..30}; do
+  if docker exec "${CONTAINER_NAME}" test -f /var/jenkins_home/secrets/initialAdminPassword; then
+    break
+  fi
+  echo "Waiting for Jenkins to generate the initialAdminPassword (Attempt $i/30)..."
+  sleep 5
 done
 
 echo "------------------------------------------------------------"
