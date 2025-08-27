@@ -110,7 +110,7 @@ CA_CERT="$($KUBECTL config view --raw -o jsonpath='{.clusters[0].cluster.certifi
 
 # Check if CA cert exists and write it to file
 if [[ -n "$CA_CERT" ]]; then
-    echo "$CA_CERT" > "$CERT_OUT"
+    echo "$CA_CERT" | base64 -d  > "$CERT_OUT"
     log "Kubernetes server certificate written to: $CERT_OUT"
 else
     log "Failed to retrieve Kubernetes server certificate."
