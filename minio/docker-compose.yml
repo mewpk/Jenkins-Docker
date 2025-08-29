@@ -1,0 +1,29 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ACCESS_KEY=adminaccesskey
+      - MINIO_SECRET_KEY=adminaccesskey
+    ports:
+      - 9900:9000
+      - 9901:9001
+    volumes:
+      - minio_data:/data
+    networks:
+      - minio_network
+    command: server /data --console-address ":9001"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--silent", "--fail", "http://localhost:9000/minio/health/ready"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
+
+volumes:
+  minio_data:
+    driver: local
+
+networks:
+  minio_network:
+    driver: bridge
